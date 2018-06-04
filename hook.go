@@ -1,7 +1,7 @@
 package main
 
 import (
-	"time"
+	"fmt"
 
 	log "github.com/Sirupsen/logrus"
 	hookfs "github.com/osrg/hookfs/hookfs"
@@ -37,13 +37,6 @@ func (this *InjuredHook) PostOpen(realRetCode int32, ctx hookfs.HookContext) (er
 // implements hookfs.HookOnRead
 func (this *InjuredHook) PreRead(path string, length int64, offset int64) ([]byte, error, bool, hookfs.HookContext) {
 	ctx := InjuredHookContext{path: path}
-	sleep := 3 * time.Second
-	log.WithFields(log.Fields{
-		"this":  this,
-		"ctx":   ctx,
-		"sleep": sleep,
-	}).Info("Injured PreRead: sleeping")
-	time.Sleep(sleep)
 	return nil, nil, false, ctx
 }
 
@@ -88,19 +81,25 @@ func (this *InjuredHook) PostOpenDir(realRetCode int32, ctx hookfs.HookContext) 
 // implements hookfs.HookOnFsync
 func (this *InjuredHook) PreFsync(path string, flags uint32) (error, bool, hookfs.HookContext) {
 	ctx := InjuredHookContext{path: path}
-	if path != "" {
-		sleep := 3 * time.Second
-		log.WithFields(log.Fields{
-			"this":  this,
-			"ctx":   ctx,
-			"sleep": sleep,
-		}).Info("Injured PreFsync: sleeping")
-		time.Sleep(sleep)
-	}
 	return nil, false, ctx
 }
 
 // implements hookfs.HookOnFsync
 func (this *InjuredHook) PostFsync(realRetCode int32, ctx hookfs.HookContext) (error, bool) {
 	return nil, false
+}
+
+var injurers = map[string]InjuredHook{}
+
+func RegisterInjuredHook(name string, hook InjuredHook) {
+	_, ok := injurers[name]
+	if ok {
+		panic(fmt.Sprintf("duplicate register injurer %s", name))
+	}
+
+	injurers[name] = hook
+}
+
+func GetInjurerCreator(name string) InjuredHook {
+	return injurers[name]
 }
