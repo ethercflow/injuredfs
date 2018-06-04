@@ -44,8 +44,10 @@ func (this *InjuredHook) PostOpen(realRetCode int32, ctx hookfs.HookContext) (er
 // implements hookfs.HookOnRead
 func (this *InjuredHook) PreRead(path string, length int64, offset int64) ([]byte, error, bool, hookfs.HookContext) {
 	ctx := InjuredHookContext{path: path}
+
 	this.rl.RLock()
 	defer this.rl.RUnlock()
+
 	t, ok := this.read[path]
 	if ok && t != 0 {
 		sleep := t * time.Millisecond
@@ -56,6 +58,7 @@ func (this *InjuredHook) PreRead(path string, length int64, offset int64) ([]byt
 		}).Info("InjuredHook PreRead: sleeping")
 		time.Sleep(sleep)
 	}
+
 	return nil, nil, false, ctx
 }
 
@@ -100,8 +103,10 @@ func (this *InjuredHook) PostOpenDir(realRetCode int32, ctx hookfs.HookContext) 
 // implements hookfs.HookOnFsync
 func (this *InjuredHook) PreFsync(path string, flags uint32) (error, bool, hookfs.HookContext) {
 	ctx := InjuredHookContext{path: path}
+
 	this.fl.RLock()
 	defer this.fl.RUnlock()
+
 	t, ok := this.fsync[path]
 	if ok && t != 0 && path != "" {
 		sleep := t * time.Millisecond
@@ -112,10 +117,23 @@ func (this *InjuredHook) PreFsync(path string, flags uint32) (error, bool, hookf
 		}).Info("InjuredHook PreFsync: sleeping")
 		time.Sleep(sleep)
 	}
+
 	return nil, false, ctx
 }
 
 // implements hookfs.HookOnFsync
 func (this *InjuredHook) PostFsync(realRetCode int32, ctx hookfs.HookContext) (error, bool) {
 	return nil, false
+}
+
+func (this *InjuredHook) SetReadLatency(path string, latency time.Duration) {
+	this.rl.Lock()
+	defer this.rl.Unlock()
+	this.read[path] = latency
+}
+
+func (this *InjuredHook) SetFsyncLatency(path string, latency time.Duration) {
+	this.fl.Lock()
+	defer this.fl.Unlock()
+	this.fsync[path] = latency
 }
