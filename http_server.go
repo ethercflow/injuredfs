@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 type Msg struct {
@@ -17,6 +19,10 @@ type Server struct{}
 
 func (s *Server) Handler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.WithFields(log.Fields{
+			"request": r,
+		}).Info("Received http request")
+
 		if r.URL.Path != "/set_latency" {
 			http.NotFound(w, r)
 			return
