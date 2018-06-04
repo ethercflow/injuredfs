@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	hookfs "github.com/osrg/hookfs/hookfs"
@@ -13,7 +14,10 @@ type InjuredHookContext struct {
 }
 
 // implements hookfs.Hook
-type InjuredHook struct{}
+type InjuredHook struct {
+	readLatency       time.Duration
+	asyncWriteLatency time.Duration
+}
 
 // implements hookfs.HookWithInit
 func (this *InjuredHook) Init() error {
@@ -37,6 +41,13 @@ func (this *InjuredHook) PostOpen(realRetCode int32, ctx hookfs.HookContext) (er
 // implements hookfs.HookOnRead
 func (this *InjuredHook) PreRead(path string, length int64, offset int64) ([]byte, error, bool, hookfs.HookContext) {
 	ctx := InjuredHookContext{path: path}
+	sleep := this.readLatency * time.Second
+	log.WithFields(log.Fields{
+		"this":  this,
+		"ctx":   ctx,
+		"sleep": sleep,
+	}).Info("InjuredHook PreRead: sleeping")
+	time.Sleep(sleep)
 	return nil, nil, false, ctx
 }
 
@@ -81,6 +92,15 @@ func (this *InjuredHook) PostOpenDir(realRetCode int32, ctx hookfs.HookContext) 
 // implements hookfs.HookOnFsync
 func (this *InjuredHook) PreFsync(path string, flags uint32) (error, bool, hookfs.HookContext) {
 	ctx := InjuredHookContext{path: path}
+	if path != "" {
+		sleep := this.asyncWriteLatency * time.Second
+		log.WithFields(log.Fields{
+			"this":  this,
+			"ctx":   ctx,
+			"sleep": sleep,
+		}).Info("InjuredHook PreFsync: sleeping")
+		time.Sleep(sleep)
+	}
 	return nil, false, ctx
 }
 
@@ -100,6 +120,6 @@ func RegisterInjuredHook(name string, hook InjuredHook) {
 	injurers[name] = hook
 }
 
-func GetInjurerCreator(name string) InjuredHook {
+func GetInjurerHook(name string) InjuredHook {
 	return injurers[name]
 }
