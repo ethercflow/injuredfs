@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strings"
 	"sync"
 	"time"
 
@@ -48,7 +49,7 @@ func (this *InjuredHook) PreRead(path string, length int64, offset int64) ([]byt
 	this.rl.RLock()
 	defer this.rl.RUnlock()
 
-	t, ok := this.read[path]
+	t, ok := this.read[strings.Split(path, "/")[0]]
 	if ok && t != 0 {
 		sleep := t * time.Millisecond
 		log.WithFields(log.Fields{
@@ -107,7 +108,7 @@ func (this *InjuredHook) PreFsync(path string, flags uint32) (error, bool, hookf
 	this.fl.RLock()
 	defer this.fl.RUnlock()
 
-	t, ok := this.fsync[path]
+	t, ok := this.fsync[strings.Split(path, "/")[0]]
 	if ok && t != 0 && path != "" {
 		sleep := t * time.Millisecond
 		log.WithFields(log.Fields{
@@ -130,22 +131,22 @@ func (this *InjuredHook) SetReadLatency(path string, latency time.Duration) {
 	this.rl.Lock()
 	defer this.rl.Unlock()
 
+	this.read[path] = latency
 	log.WithFields(log.Fields{
 		"this":    this,
 		"path":    path,
 		"latency": latency,
 	}).Info("SetReadLatency")
-	this.read[path] = latency
 }
 
 func (this *InjuredHook) SetFsyncLatency(path string, latency time.Duration) {
 	this.fl.Lock()
 	defer this.fl.Unlock()
 
+	this.fsync[path] = latency
 	log.WithFields(log.Fields{
 		"this":    this,
 		"path":    path,
 		"latency": latency,
 	}).Info("SetFsyncLatency")
-	this.fsync[path] = latency
 }
