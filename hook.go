@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"sync"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -15,8 +15,11 @@ type InjuredHookContext struct {
 
 // implements hookfs.Hook
 type InjuredHook struct {
-	readLatency       time.Duration
-	asyncWriteLatency time.Duration
+	read map[string]time.Duration
+	rl   *sync.RWMutex
+
+	fsync map[string]time.Duration
+	fl    *sync.RWMutex
 }
 
 // implements hookfs.HookWithInit
@@ -41,13 +44,18 @@ func (this *InjuredHook) PostOpen(realRetCode int32, ctx hookfs.HookContext) (er
 // implements hookfs.HookOnRead
 func (this *InjuredHook) PreRead(path string, length int64, offset int64) ([]byte, error, bool, hookfs.HookContext) {
 	ctx := InjuredHookContext{path: path}
-	sleep := this.readLatency * time.Second
-	log.WithFields(log.Fields{
-		"this":  this,
-		"ctx":   ctx,
-		"sleep": sleep,
-	}).Info("InjuredHook PreRead: sleeping")
-	time.Sleep(sleep)
+	this.rl.RLock()
+	defer this.rl.RUnlock()
+	t, ok := this.read[path]
+	if ok && t != 0 {
+		sleep := t * time.Millisecond
+		log.WithFields(log.Fields{
+			"this":  this,
+			"ctx":   ctx,
+			"sleep": sleep,
+		}).Info("InjuredHook PreRead: sleeping")
+		time.Sleep(sleep)
+	}
 	return nil, nil, false, ctx
 }
 
@@ -92,8 +100,11 @@ func (this *InjuredHook) PostOpenDir(realRetCode int32, ctx hookfs.HookContext) 
 // implements hookfs.HookOnFsync
 func (this *InjuredHook) PreFsync(path string, flags uint32) (error, bool, hookfs.HookContext) {
 	ctx := InjuredHookContext{path: path}
-	if path != "" {
-		sleep := this.asyncWriteLatency * time.Second
+	this.fl.RLock()
+	defer this.fl.RUnlock()
+	t, ok := this.fsync[path]
+	if ok && t != 0 && path != "" {
+		sleep := t * time.Millisecond
 		log.WithFields(log.Fields{
 			"this":  this,
 			"ctx":   ctx,
@@ -107,19 +118,4 @@ func (this *InjuredHook) PreFsync(path string, flags uint32) (error, bool, hookf
 // implements hookfs.HookOnFsync
 func (this *InjuredHook) PostFsync(realRetCode int32, ctx hookfs.HookContext) (error, bool) {
 	return nil, false
-}
-
-var injurers = map[string]InjuredHook{}
-
-func RegisterInjuredHook(name string, hook InjuredHook) {
-	_, ok := injurers[name]
-	if ok {
-		panic(fmt.Sprintf("duplicate register injurer %s", name))
-	}
-
-	injurers[name] = hook
-}
-
-func GetInjurerHook(name string) InjuredHook {
-	return injurers[name]
 }
