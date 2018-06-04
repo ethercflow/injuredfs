@@ -129,11 +129,23 @@ func (this *InjuredHook) PostFsync(realRetCode int32, ctx hookfs.HookContext) (e
 func (this *InjuredHook) SetReadLatency(path string, latency time.Duration) {
 	this.rl.Lock()
 	defer this.rl.Unlock()
+
+	log.WithFields(log.Fields{
+		"this":    this,
+		"path":    path,
+		"latency": latency,
+	}).Info("SetReadLatency")
 	this.read[path] = latency
 }
 
 func (this *InjuredHook) SetFsyncLatency(path string, latency time.Duration) {
 	this.fl.Lock()
 	defer this.fl.Unlock()
+
+	log.WithFields(log.Fields{
+		"this":    this,
+		"path":    path,
+		"latency": latency,
+	}).Info("SetFsyncLatency")
 	this.fsync[path] = latency
 }
