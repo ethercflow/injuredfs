@@ -3,10 +3,11 @@ package main
 import (
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	hookfs "github.com/osrg/hookfs/hookfs"
+	log "github.com/sirupsen/logrus"
 )
 
 // implements hookfs.HookContext
@@ -32,18 +33,18 @@ func (this *InjuredHook) Init() error {
 }
 
 // implements hookfs.HookOnOpen
-func (this *InjuredHook) PreOpen(path string, flags uint32) (error, bool, hookfs.HookContext) {
+func (this *InjuredHook) PreOpen(path string, flags uint32) (bool, hookfs.HookContext, error) {
 	ctx := InjuredHookContext{path: path}
-	return nil, false, ctx
+	return false, ctx, nil
 }
 
 // implements hookfs.HookOnOpen
-func (this *InjuredHook) PostOpen(realRetCode int32, ctx hookfs.HookContext) (error, bool) {
-	return nil, false
+func (this *InjuredHook) PostOpen(realRetCode int32, ctx hookfs.HookContext) (bool, error) {
+	return false, nil
 }
 
 // implements hookfs.HookOnRead
-func (this *InjuredHook) PreRead(path string, length int64, offset int64) ([]byte, error, bool, hookfs.HookContext) {
+func (this *InjuredHook) PreRead(path string, length int64, offset int64) ([]byte, bool, hookfs.HookContext, error) {
 	ctx := InjuredHookContext{path: path}
 
 	this.rl.RLock()
@@ -60,49 +61,59 @@ func (this *InjuredHook) PreRead(path string, length int64, offset int64) ([]byt
 		time.Sleep(sleep)
 	}
 
-	return nil, nil, false, ctx
+	return nil, false, ctx, nil
 }
 
 // implements hookfs.HookOnRead
-func (this *InjuredHook) PostRead(realRetCode int32, realBuf []byte, ctx hookfs.HookContext) ([]byte, error, bool) {
-	return nil, nil, false
+func (this *InjuredHook) PostRead(realRetCode int32, realBuf []byte, ctx hookfs.HookContext) ([]byte, bool, error) {
+	return nil, false, nil
+}
+
+// implements hookfs.HookOnWrite
+func (this *InjuredHook) PreWrite(path string, buf []byte, offset int64) (hooked bool, ctx hookfs.HookContext, err error) {
+	return false, nil, nil
+}
+
+// implements hookfs.HookOnWrite
+func (this *InjuredHook) PostWrite(realRetCode int32, prehookCtx hookfs.HookContext) (hooked bool, err error) {
+	return false, nil
 }
 
 // implements hookfs.HookOnMkdir
-func (this *InjuredHook) PreMkdir(path string, mode uint32) (error, bool, hookfs.HookContext) {
+func (this *InjuredHook) PreMkdir(path string, mode uint32) (bool, hookfs.HookContext, error) {
 	ctx := InjuredHookContext{path: path}
-	return nil, false, ctx
+	return false, ctx, nil
 }
 
 // implements hookfs.HookOnMkdir
-func (this *InjuredHook) PostMkdir(realRetCode int32, ctx hookfs.HookContext) (error, bool) {
-	return nil, false
+func (this *InjuredHook) PostMkdir(realRetCode int32, ctx hookfs.HookContext) (bool, error) {
+	return false, nil
 }
 
 // implements hookfs.HookOnRmdir
-func (this *InjuredHook) PreRmdir(path string) (error, bool, hookfs.HookContext) {
+func (this *InjuredHook) PreRmdir(path string) (bool, hookfs.HookContext, error) {
 	ctx := InjuredHookContext{path: path}
-	return nil, false, ctx
+	return false, ctx, nil
 }
 
 // implements hookfs.HookOnRmdir
-func (this *InjuredHook) PostRmdir(realRetCode int32, ctx hookfs.HookContext) (error, bool) {
-	return nil, false
+func (this *InjuredHook) PostRmdir(realRetCode int32, ctx hookfs.HookContext) (bool, error) {
+	return false, nil
 }
 
 // implements hookfs.HookOnOpenDir
-func (this *InjuredHook) PreOpenDir(path string) (error, bool, hookfs.HookContext) {
+func (this *InjuredHook) PreOpenDir(path string) (bool, hookfs.HookContext, error) {
 	ctx := InjuredHookContext{path: path}
-	return nil, false, ctx
+	return false, ctx, nil
 }
 
 // implements hookfs.HookOnOpenDir
-func (this *InjuredHook) PostOpenDir(realRetCode int32, ctx hookfs.HookContext) (error, bool) {
-	return nil, false
+func (this *InjuredHook) PostOpenDir(realRetCode int32, ctx hookfs.HookContext) (bool, error) {
+	return false, nil
 }
 
 // implements hookfs.HookOnFsync
-func (this *InjuredHook) PreFsync(path string, flags uint32) (error, bool, hookfs.HookContext) {
+func (this *InjuredHook) PreFsync(path string, flags uint32) (bool, hookfs.HookContext, error) {
 	ctx := InjuredHookContext{path: path}
 
 	this.fl.RLock()
@@ -116,15 +127,15 @@ func (this *InjuredHook) PreFsync(path string, flags uint32) (error, bool, hookf
 			"ctx":   ctx,
 			"sleep": sleep,
 		}).Info("InjuredHook PreFsync: sleeping")
-		time.Sleep(sleep)
+		// time.Sleep(sleep)
 	}
 
-	return nil, false, ctx
+	return true, ctx, syscall.ENOMEM
 }
 
 // implements hookfs.HookOnFsync
-func (this *InjuredHook) PostFsync(realRetCode int32, ctx hookfs.HookContext) (error, bool) {
-	return nil, false
+func (this *InjuredHook) PostFsync(realRetCode int32, ctx hookfs.HookContext) (bool, error) {
+	return false, nil
 }
 
 func (this *InjuredHook) SetReadLatency(path string, latency time.Duration) {
