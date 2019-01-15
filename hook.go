@@ -2,10 +2,8 @@ package main
 
 import (
 	"github.com/ethercflow/hookfs/hookfs"
-	log "github.com/sirupsen/logrus"
 	"math/rand"
 	"regexp"
-	"strings"
 	"sync"
 	"time"
 )
