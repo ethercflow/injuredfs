@@ -1,13 +1,73 @@
 package main
 
 import (
+	"github.com/osrg/hookfs/hookfs"
+	log "github.com/sirupsen/logrus"
+	"math/rand"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
-
-	log "github.com/Sirupsen/logrus"
-	hookfs "github.com/osrg/hookfs/hookfs"
 )
+
+var (
+	faultMap map[string]*faultContext
+	fml sync.Mutex
+)
+
+func init() {
+	faultMap = make(map[string]*faultContext)
+}
+
+type faultContext struct {
+	errno error
+	random bool
+	pct int
+	path string
+	delay time.Duration
+}
+
+func randomErrno() error {
+	return nil
+}
+
+func probab(percentage int) bool {
+	return rand.Intn(99) < percentage
+}
+
+func faultInject(path, method string) error {
+	fml.Lock()
+	fc, ok := faultMap[method]
+	if !ok {
+		fml.Unlock()
+		return nil
+	}
+	fml.Unlock()
+
+	if !probab(fc.pct) {
+		return nil
+	}
+
+	if len(fc.path) > 0 {
+		re, err := regexp.Compile(fc.path)
+		if err != nil || !re.MatchString(path) {
+			return nil
+		}
+	}
+
+	var errno error = nil
+	if fc.errno != nil {
+		errno = fc.errno
+	} else if fc.random {
+		errno = randomErrno()
+	}
+
+	if fc.delay > 0 {
+		time.Sleep(fc.delay)
+	}
+
+	return errno
+}
 
 // implements hookfs.HookContext
 type InjuredHookContext struct {
