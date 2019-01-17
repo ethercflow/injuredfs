@@ -60,9 +60,6 @@ func faultInject(path, method string) error {
 	fml.Lock()
 	fc, ok := faultMap[method]
 	if !ok {
-		log.WithFields(log.Fields{
-			"method": method,
-		}).Warn("Invalid method")
 		fml.Unlock()
 		return nil
 	}
