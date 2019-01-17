@@ -19,7 +19,6 @@ var (
 	logLevel   = flag.Int("log-level", 0, fmt.Sprintf("log level (%d..%d)", hookfs.LogLevelMin, hookfs.LogLevelMax))
 )
 
-
 func main() {
 	sc := make(chan os.Signal, 1)
 

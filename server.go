@@ -2,10 +2,6 @@ package main
 
 import (
 	"context"
-	pb "github.com/ethercflow/injuredfs/pb"
-	"github.com/golang/protobuf/ptypes/empty"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 	"log"
 	"math/rand"
 	"net"
@@ -13,6 +9,11 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	pb "github.com/ethercflow/injuredfs/pb"
+	"github.com/golang/protobuf/ptypes/empty"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 //go:generate protoc -I pb pb/injure.proto --go_out=plugins=grpc:pb
@@ -92,7 +93,7 @@ func faultInject(path, method string) error {
 type server struct {
 }
 
-func (s* server) methods() []string {
+func (s *server) methods() []string {
 	ms := make([]string, 0)
 	for k := range methods {
 		ms = append(ms, k)
@@ -134,11 +135,11 @@ func (s *server) setFault(ms []string, f *faultContext) {
 
 func (s *server) SetFault(ctx context.Context, in *pb.Request) (*empty.Empty, error) {
 	f := &faultContext{
-		errno: syscall.Errno(in.Errno),
+		errno:  syscall.Errno(in.Errno),
 		random: in.Random,
-		pct: in.Pct,
-		path: in.Path,
-		delay: time.Duration(in.Delay) * time.Microsecond,
+		pct:    in.Pct,
+		path:   in.Path,
+		delay:  time.Duration(in.Delay) * time.Microsecond,
 	}
 	s.setFault(in.Methods, f)
 	return &empty.Empty{}, nil
@@ -146,11 +147,11 @@ func (s *server) SetFault(ctx context.Context, in *pb.Request) (*empty.Empty, er
 
 func (s *server) SetFaultAll(ctx context.Context, in *pb.Request) (*empty.Empty, error) {
 	f := &faultContext{
-		errno: syscall.Errno(in.Errno),
+		errno:  syscall.Errno(in.Errno),
 		random: in.Random,
-		pct: in.Pct,
-		path: in.Path,
-		delay: time.Duration(in.Delay) * time.Microsecond,
+		pct:    in.Pct,
+		path:   in.Path,
+		delay:  time.Duration(in.Delay) * time.Microsecond,
 	}
 	s.setFault(s.methods(), f)
 	return &empty.Empty{}, nil
