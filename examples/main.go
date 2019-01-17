@@ -18,6 +18,8 @@ var (
 )
 
 func main() {
+	flag.Parse()
+
 	// Set up a connection to the server.
 	conn, err := grpc.Dial(*addr, grpc.WithInsecure())
 	if err != nil {
@@ -36,8 +38,8 @@ func main() {
 		log.Println("Vaild methods: ", ms.Methods)
 	}
 
-	dir := *mountpoint + "/latency/"
-	if err := os.Mkdir(dir, 0755); err != nil {
+	dir := "latency/"
+	if err := os.Mkdir(*mountpoint + dir, 0755); err != nil {
 		log.Fatalf("Mkdir failed: %v", err)
 	}
 	f, err := os.Create(dir + "testfile")
