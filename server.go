@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 	"math/rand"
 	"net"
 	"regexp"
@@ -14,6 +13,7 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+	log "github.com/sirupsen/logrus"
 )
 
 //go:generate protoc -I pb pb/injure.proto --go_out=plugins=grpc:pb
@@ -60,6 +60,9 @@ func faultInject(path, method string) error {
 	fml.Lock()
 	fc, ok := faultMap[method]
 	if !ok {
+		log.WithFields(log.Fields{
+			"method": method,
+		}).Warn("Invalid method")
 		fml.Unlock()
 		return nil
 	}
@@ -72,9 +75,18 @@ func faultInject(path, method string) error {
 	if len(fc.path) > 0 {
 		re, err := regexp.Compile(fc.path)
 		if err != nil || !re.MatchString(path) {
+			log.WithFields(log.Fields{
+				"method": method,
+				"fc": fc,
+			}).Warn("Invalid path")
 			return nil
 		}
 	}
+
+	log.WithFields(log.Fields{
+		"method": method,
+		"fc": fc,
+	}).Debug("Fault inject info")
 
 	var errno error = nil
 	if fc.errno != nil {
