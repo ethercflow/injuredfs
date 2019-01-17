@@ -31,7 +31,7 @@ func init() {
 }
 
 type faultContext struct {
-	errno  error
+	errno error
 	random bool
 	pct    uint32
 	path   string
@@ -143,7 +143,7 @@ func (s *server) setFault(ms []string, f *faultContext) {
 }
 
 func (s *server) SetFault(ctx context.Context, in *pb.Request) (*empty.Empty, error) {
-	var errno error = nil
+	errno := syscall.Errno(0)
 	if in.Errno != 0 {
 		errno = syscall.Errno(in.Errno)
 	}
@@ -159,8 +159,12 @@ func (s *server) SetFault(ctx context.Context, in *pb.Request) (*empty.Empty, er
 }
 
 func (s *server) SetFaultAll(ctx context.Context, in *pb.Request) (*empty.Empty, error) {
+	errno := syscall.Errno(0)
+	if in.Errno != 0 {
+		errno = syscall.Errno(in.Errno)
+	}
 	f := &faultContext{
-		errno:  syscall.Errno(in.Errno),
+		errno:  errno,
 		random: in.Random,
 		pct:    in.Pct,
 		path:   in.Path,
