@@ -146,8 +146,12 @@ func (s *server) setFault(ms []string, f *faultContext) {
 }
 
 func (s *server) SetFault(ctx context.Context, in *pb.Request) (*empty.Empty, error) {
+	var errno error = nil
+	if in.Errno != 0 {
+		errno = syscall.Errno(in.Errno)
+	}
 	f := &faultContext{
-		errno:  syscall.Errno(in.Errno),
+		errno:  errno,
 		random: in.Random,
 		pct:    in.Pct,
 		path:   in.Path,
