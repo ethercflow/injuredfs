@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"syscall"
 	"time"
 
 	pb "github.com/ethercflow/injuredfs/pb"
@@ -39,10 +40,10 @@ func main() {
 	}
 
 	dir := "latency/"
-	if err := os.Mkdir(*mountpoint + dir, 0755); err != nil {
+	if err := os.Mkdir(*mountpoint + dir, 0755); err != nil && err != syscall.EEXIST {
 		log.Fatalf("Mkdir failed: %v", err)
 	}
-	f, err := os.Create(dir + "testfile")
+	f, err := os.Create(*mountpoint + dir + "tf")
 	if err != nil {
 		log.Fatalf("Create file failed: %v", err)
 	}
@@ -57,4 +58,14 @@ func main() {
 	}
 	end := time.Now()
 	log.Println("Write latency: ", end.Sub(begin))
+
+	req = &pb.Request{Methods:[]string{"read"}, Errno: 0x5, Random: false, Pct: 100, Path: dir, Delay: 0}
+	if _, err := c.SetFault(ctx, req); err != nil {
+		log.Fatalf("Set fault failed: %v", err)
+	}
+	if _, err := f.Read(make([]byte, 4096)); err != nil && err == syscall.EIO {
+		log.Println("Set fault syscall.EIO successfully")
+	} else {
+		log.Fatal("Set fault syscall.EIO failed, please check")
+	}
 }
