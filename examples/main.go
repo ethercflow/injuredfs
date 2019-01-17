@@ -29,7 +29,7 @@ func main() {
 	defer conn.Close()
 	c := pb.NewInjureClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
 	defer cancel()
 
 	ms, err := c.Methods(ctx, &empty.Empty{})
@@ -39,11 +39,11 @@ func main() {
 		log.Println("Vaild methods: ", ms.Methods)
 	}
 
-	dir := "latency/"
-	if err := os.Mkdir(*mountpoint + dir, 0755); err != nil && err != syscall.EEXIST {
+	dir := "testdir/"
+	if err := os.Mkdir(*mountpoint + dir, 0755); err != nil && !os.IsExist(err) {
 		log.Fatalf("Mkdir failed: %v", err)
 	}
-	f, err := os.Create(*mountpoint + dir + "tf")
+	f, err := os.Create(*mountpoint + dir + "file")
 	if err != nil {
 		log.Fatalf("Create file failed: %v", err)
 	}
@@ -63,9 +63,9 @@ func main() {
 	if _, err := c.SetFault(ctx, req); err != nil {
 		log.Fatalf("Set fault failed: %v", err)
 	}
-	if _, err := f.Read(make([]byte, 4096)); err != nil && err == syscall.EIO {
+	if _, err := f.Read(make([]byte, 20)); err != nil && err.(*os.PathError).Err.(syscall.Errno) == syscall.EIO {
 		log.Println("Set fault syscall.EIO successfully")
 	} else {
-		log.Fatal("Set fault syscall.EIO failed, please check")
+		log.Fatalf("Set fault syscall.EIO failed, please check: %v", err)
 	}
 }
