@@ -50,12 +50,14 @@ func initMethods() {
 }
 
 func randomErrno() error {
-	return nil
+	// from E2BIG to EXFULL, notice linux only
+	return syscall.Errno(rand.Intn(0x36 - 0x7) + 0x7)
 }
 
 func probab(percentage uint32) bool {
 	return rand.Intn(99) < int(percentage)
 }
+
 func faultInject(path, method string) error {
 	fml.Lock()
 	fc, ok := faultMap[method]

@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
@@ -18,6 +19,10 @@ var (
 	mountpoint = flag.String("mountpoint", "", "MOUNTPOINT")
 	logLevel   = flag.Int("log-level", 0, fmt.Sprintf("log level (%d..%d)", hookfs.LogLevelMin, hookfs.LogLevelMax))
 )
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
 
 func main() {
 	sc := make(chan os.Signal, 1)
