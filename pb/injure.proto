@@ -17,7 +17,7 @@ message Request {
   uint32 errno = 2;
   bool random = 3;
   uint32 pct = 4;
-  string path = 5;
+  string path = 5; // relative path (root is mountpoint)
   uint32 delay = 6;
 }
 
