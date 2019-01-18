@@ -49,6 +49,10 @@ func main() {
 		ctx, _ := context.WithTimeout(context.Background(), 5 * time.Second)
 		err := exec.CommandContext(ctx, "fusermount", "-u", *mountpoint).Run()
 		if err != nil {
+			// Is there any risk?
+			if err1 := exec.CommandContext(ctx, "umount", "-l", *mountpoint).Run(); err1 != nil {
+				log.Fatalln("fusermount failed: ", err, " even umount failed too: ", err1)
+			}
 			log.Fatal(err)
 		}
 		os.Exit(0)
