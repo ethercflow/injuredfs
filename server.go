@@ -47,6 +47,17 @@ func initMethods() {
 	methods["rmdir"] = true
 	methods["opendir"] = true
 	methods["fsync"] = true
+	methods["flush"] = true
+	methods["release"] = true
+	methods["truncate"] = true
+	methods["getattr"] = true
+	methods["chown"] = true
+	methods["chmod"] = true
+	methods["utimens"] = true
+	methods["allocate"] = true
+	methods["getlk"] = true
+	methods["setlk"] = true
+	methods["setlkw"] = true
 }
 
 func randomErrno() error {
