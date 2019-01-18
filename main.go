@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"math/rand"
 	"os"
+	"os/exec"
 	"os/signal"
 	"syscall"
 	"time"
@@ -40,11 +42,16 @@ func main() {
 		select {
 		case <-sc:
 			fmt.Printf("\nGot signal [%v] again to exit.\n", sig)
-			os.Exit(1)
 		case <-time.After(10 * time.Second):
 			fmt.Print("\nWait 10s for closed, force exit\n")
-			os.Exit(1)
 		}
+
+		ctx, _ := context.WithTimeout(context.Background(), 5 * time.Second)
+		err := exec.CommandContext(ctx, "fusermount", "-u", *mountpoint).Run()
+		if err != nil {
+			log.Fatal(err)
+		}
+		os.Exit(0)
 	}()
 
 	flag.Parse()
