@@ -58,6 +58,19 @@ func initMethods() {
 	methods["getlk"] = true
 	methods["setlk"] = true
 	methods["setlkw"] = true
+	methods["statfs"] = true
+	methods["readlink"] = true
+	methods["symlink"] = true
+	methods["create"] = true
+	methods["access"] = true
+	methods["link"] = true
+	methods["mknod"] = true
+	methods["rename"] = true
+	methods["unlink"] = true
+	methods["getxattr"] = true
+	methods["listxattr"] = true
+	methods["removexattr"] = true
+	methods["setxattr"] = true
 }
 
 func randomErrno() error {
