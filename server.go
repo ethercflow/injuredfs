@@ -11,9 +11,9 @@ import (
 
 	pb "github.com/ethercflow/injuredfs/pb"
 	"github.com/golang/protobuf/ptypes/empty"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
-	log "github.com/sirupsen/logrus"
 )
 
 //go:generate protoc -I pb pb/injure.proto --go_out=plugins=grpc:pb
@@ -31,7 +31,7 @@ func init() {
 }
 
 type faultContext struct {
-	errno error
+	errno  error
 	random bool
 	pct    uint32
 	path   string
@@ -75,7 +75,7 @@ func initMethods() {
 
 func randomErrno() error {
 	// from E2BIG to EXFULL, notice linux only
-	return syscall.Errno(rand.Intn(0x36 - 0x7) + 0x7)
+	return syscall.Errno(rand.Intn(0x36-0x7) + 0x7)
 }
 
 func probab(percentage uint32) bool {
@@ -100,7 +100,8 @@ func faultInject(path, method string) error {
 		if err != nil || !re.MatchString(path) {
 			log.WithFields(log.Fields{
 				"method": method,
-				"fc": fc,
+				"fc":     fc,
+				"path":   path,
 			}).Warn("Invalid path")
 			return nil
 		}
@@ -108,7 +109,8 @@ func faultInject(path, method string) error {
 
 	log.WithFields(log.Fields{
 		"method": method,
-		"fc": fc,
+		"fc":     fc,
+		"path":   path,
 	}).Debug("Fault inject info")
 
 	var errno error = nil
