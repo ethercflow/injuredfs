@@ -41,11 +41,17 @@ type InjureClient interface {
 }
 
 type Request struct {
+        // Methods: filesystem's operations, such as open, read, write, fsync and so on
         Methods              []string `protobuf:"bytes,1,rep,name=methods,proto3" json:"methods,omitempty"`
+        // Errno: syscall's return errno, such as EIO, ENOSPC and so on
         Errno                uint32   `protobuf:"varint,2,opt,name=errno,proto3" json:"errno,omitempty"`
+        // Random: set true to random gen errno, vice versa
         Random               bool     `protobuf:"varint,3,opt,name=random,proto3" json:"random,omitempty"`
+        // Pct: short for percent, failure injection percentage
         Pct                  uint32   `protobuf:"varint,4,opt,name=pct,proto3" json:"pct,omitempty"`
+        // Path: relative path (notice: relative to mountpoint), support simple regular expressions
         Path                 string   `protobuf:"bytes,5,opt,name=path,proto3" json:"path,omitempty"`
+        // Delay: the unit is microseconds
         Delay                uint32   `protobuf:"varint,6,opt,name=delay,proto3" json:"delay,omitempty"`
         XXX_NoUnkeyedLiteral struct{} `json:"-"`
         XXX_unrecognized     []byte   `json:"-"`
@@ -59,4 +65,4 @@ type Response struct {
         XXX_sizecache        int32    `json:"-"`
 }
 ```
-Here's an example [main.go](examples/main.go)
+Here's an [go example](examples/go/main.go) and a [python example](examples/python/run.py)
